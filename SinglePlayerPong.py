@@ -6,26 +6,26 @@ import numpy as np
 import mediapipe_cheats as mpc
 
 # Game constants
-WIDTH, HEIGHT = 1200, 900
+WIDTH, HEIGHT = 1400, 1200
 PADDLE_WIDTH, PADDLE_HEIGHT = 20, 200
 BALL_SIZE = 20
 PADDLE_SPEED = 8
-BALL_SPEED = 500  # Base speed in pixels per second
-MAX_BALL_SPEED = 1200  # Maximum ball speed to prevent clipping
-HAND_SENSITIVITY = 2  # Increase to make paddles more responsive
-WALL_THICKNESS = 30  # Thickness of the right wall
+BALL_SPEED = 1000  #
+MAX_BALL_SPEED = 1200  
+HAND_SENSITIVITY = 2  
+WALL_THICKNESS = 35 
 
 # Control area constants
 CONTROL_AREA_PERCENTAGE = 80
 margin_percentage = (100 - CONTROL_AREA_PERCENTAGE) / 2
 margin = margin_percentage / 100
 
-# Define the control area boundaries
+# control area boundaries
 control_area = {
-    "x_min": margin,          # e.g., 0.10 for 80% width
-    "x_max": 1 - margin,      # e.g., 0.90 for 80% width
-    "y_min": margin,          # e.g., 0.10 for 80% height
-    "y_max": 1 - margin       # e.g., 0.90 for 80% height
+    "x_min": margin,          
+    "x_max": 1 - margin,     
+    "y_min": margin,          
+    "y_max": 1 - margin       
 }
 
 class PongGame:
@@ -35,18 +35,15 @@ class PongGame:
         pygame.display.set_caption("Single Player Pong")
         self.clock = pygame.time.Clock()
 
-        # Define paddle, wall and ball
         self.left_paddle = pygame.Rect(10, HEIGHT//2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
         self.left_paddle_colli = pygame.Rect(-10, HEIGHT//2 - PADDLE_HEIGHT//2, PADDLE_WIDTH + 20, PADDLE_HEIGHT)
         self.wall = pygame.Rect(WIDTH - WALL_THICKNESS, 0, WALL_THICKNESS, HEIGHT)
         self.ball = pygame.Rect(WIDTH//2 - BALL_SIZE//2, HEIGHT//2 - BALL_SIZE//2, BALL_SIZE, BALL_SIZE)
         
-        # Initialize ball direction and speed
         self.ball_direction = pygame.math.Vector2()
         self.ball_speed = BALL_SPEED
         self.reset_ball()
         
-        # Scores and font
         self.score = 0
         self.font = pygame.font.Font(None, 36)
 
@@ -74,7 +71,7 @@ class PongGame:
             self.ball_direction.x *= -1
             self.ball_speed = min(self.ball_speed * 1.05, MAX_BALL_SPEED)
 
-        # Ball collision with top and bottom walls
+        # Ball col with top and bottom walls
         if self.ball.bottom <= 0:
             self.ball.y = 10
             self.ball_direction.y *= -1
@@ -84,11 +81,11 @@ class PongGame:
             self.ball_direction.y *= -1
         
 
-        # Ball collision with paddle
+        # Ball col  with paddle
         if (self.ball.colliderect(self.left_paddle_colli) or 
             (self.ball.x < 0 and (self.ball.y < self.left_paddle.top and self.ball.y > self.left_paddle.bottom) )):
             self.score += 1
-            # Calculate relative intersection point (-1 to 1)
+            # Calculate relative col point (-1 to 1)
             relative_intersect_y = (self.left_paddle_colli.centery - self.ball.centery) / (PADDLE_HEIGHT / 2)
             
             # Bounce angle (maximum 75 degrees in radians)
@@ -137,7 +134,7 @@ class PongGame:
         pygame.display.flip()
 
 def main():
-    # Initialize MediaPipe Hands
+    #Init MediaPip Hands
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
         static_image_mode=False,
@@ -147,18 +144,17 @@ def main():
     )
     mp_drawing = mp.solutions.drawing_utils
 
-    # Initialize camera
+    #Init camera
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Cannot initiate camera")
         sys.exit()
 
-    # Create game instance
     game = PongGame()
     running = True
 
     while running:
-        # Compute delta time in seconds
+        # delta time in seconds
         dt = game.clock.tick(60) / 1000.0
 
         # Process Pygame events
@@ -169,7 +165,6 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     running = False
 
-        # Initialize paddle movement delta
         paddle_delta = 0
 
         # Process hand tracking
@@ -178,10 +173,10 @@ def main():
             print("Failed to capture camera frame")
             break
 
-        # Flip frame horizontally for a selfie view
+        #Flip frame 
         frame = cv2.flip(frame, 1)
         
-        # Convert BGR image to RGB
+        #Convert BGR image to RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         # Detect hands in the frame
@@ -189,13 +184,11 @@ def main():
 
         if results.multi_hand_landmarks:
             hand_landmarks = results.multi_hand_landmarks[0]  # Only need first hand
-            # Draw hand landmarks on the frame
             mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
             
-            # Get hand position using mediapipe_cheats
             hand_x, hand_y = mpc.get_hand_center(hand_landmarks)
             
-            # First ensure hand position is within control area
+            # ensure hand position is in control area
             hand_y = max(control_area["y_min"], min(control_area["y_max"], hand_y))
             
             # Calculate relative position within control area (0-1)
@@ -219,7 +212,7 @@ def main():
 
         # Show the camera feed
         cv2.imshow('Hand Tracking', frame)
-        if cv2.waitKey(1) & 0xFF == 27:  # Exit on ESC key in OpenCV window
+        if cv2.waitKey(1) & 0xFF == 27:  
             break
 
         # Update game state and render
@@ -227,7 +220,6 @@ def main():
         game.update_ball(dt)
         game.draw()
 
-    # Cleanup resources
     cap.release()
     cv2.destroyAllWindows()
     pygame.quit()
